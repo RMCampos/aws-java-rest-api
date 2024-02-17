@@ -14,6 +14,7 @@ Tasks:
 - Java version: `17`
 - Project: `Maven`
 - Spring Boot version: `3.2.2`
+- Version: 0.0.1
 
 ### Dependencies
 - Spring Web
@@ -26,7 +27,7 @@ Tasks:
 Building:
 
 ```sh
-docker build -t aws-java-rest-api .
+docker build -t aws-java-rest-api:0.0.1 .
 ```
 
 Running:
@@ -36,4 +37,26 @@ docker run -it --rm \
   -p 8080:8080 \
   --name aws-java-rest-api \
   aws-java-rest-api
+```
+
+Login:
+
+```sh
+docker login -u rmcampos
+```
+
+Push image
+```sh
+docker image push rmcampos/aws-java-rest-api:0.0.1
+```
+
+### AWS
+
+Running:
+
+```sh
+docker run -it --rm -d \
+  -p 8080:8080 \
+  --name aws-java-rest-api \
+  docker.io/rmcampos/aws-java-rest-api:0.0.1
 ```
