@@ -2,10 +2,10 @@
 Java REST API to play with AWS technologies
 
 Tasks:
-- receive a task through HTTP Request
-- Get task description template from AWS S3
-- Replace and fill task template with values
-- Send to SQS to be sent through email as finished
+- List all tasks available through GET http request: http://localhost:8080/tasks/get-list
+- Receive a task name through POST HTTP request to be processed: http://localhost:8080/tasks/handle-task/CODE_REVIEW
+  - Get task description from AWS S3 given the task name
+  - Send to SQS to be sent through email as finished
 
 ### Packaging
 
