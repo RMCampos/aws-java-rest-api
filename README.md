@@ -20,3 +20,20 @@ Tasks:
 - Spring Boot DevTools
 - Spring Boot Actuator
 - Lombok
+
+## Docker
+
+Building:
+
+```sh
+docker build -t aws-java-rest-api .
+```
+
+Running:
+
+```sh
+docker run -it --rm \
+  -p 8080:8080 \
+  --name aws-java-rest-api \
+  aws-java-rest-api
+```
