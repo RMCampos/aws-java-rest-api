@@ -25,6 +25,6 @@ public class MessageController {
 
   @PostMapping("/{id}")
   public void processMessage(@PathVariable String id) {
-    // TODO
+    awsSqsService.processMessage(id);
   }
 }
