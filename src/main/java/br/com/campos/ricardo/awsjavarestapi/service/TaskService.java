@@ -2,8 +2,8 @@ package br.com.campos.ricardo.awsjavarestapi.service;
 
 import br.com.campos.ricardo.awsjavarestapi.aws.AwsS3Service;
 import br.com.campos.ricardo.awsjavarestapi.aws.AwsSqsService;
-import br.com.campos.ricardo.awsjavarestapi.dto.Task;
-import br.com.campos.ricardo.awsjavarestapi.dto.TaskResponse;
+import br.com.campos.ricardo.awsjavarestapi.dto.TaskDto;
+import br.com.campos.ricardo.awsjavarestapi.dto.TaskResponseDto;
 import br.com.campos.ricardo.awsjavarestapi.enums.TaskEnum;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -21,12 +21,12 @@ public class TaskService {
 
   private final AwsSqsService sqsService;
 
-  public List<Task> getTaskList() {
-    List<Task> tasks = awsS3Service.getAllTaskFiles();
+  public List<TaskDto> getTaskList() {
+    List<TaskDto> tasks = awsS3Service.getAllTaskFiles();
     return tasks;
   }
 
-  public TaskResponse handleTask(String taskName) {
+  public TaskResponseDto handleTask(String taskName) {
     TaskEnum taskEnum = TaskEnum.getByCode(taskName);
     if (taskEnum == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Task!");
@@ -35,12 +35,12 @@ public class TaskService {
     log.info("Handling task: {}", taskName);
 
     // Get from AWS S3
-    Task task = awsS3Service.getSingleTaskFile(taskEnum);
+    TaskDto task = awsS3Service.getSingleTaskFile(taskEnum);
 
     // Send to SQS to be sent through email
     sqsService.addMessageToQueue(task.description());
 
-    TaskResponse response = new TaskResponse();
+    TaskResponseDto response = new TaskResponseDto();
     response.setTask(task);
     response.setMessage("Task processed and sent to the Queue!");
 

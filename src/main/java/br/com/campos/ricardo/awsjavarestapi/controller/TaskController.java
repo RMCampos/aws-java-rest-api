@@ -1,7 +1,7 @@
 package br.com.campos.ricardo.awsjavarestapi.controller;
 
-import br.com.campos.ricardo.awsjavarestapi.dto.Task;
-import br.com.campos.ricardo.awsjavarestapi.dto.TaskResponse;
+import br.com.campos.ricardo.awsjavarestapi.dto.TaskDto;
+import br.com.campos.ricardo.awsjavarestapi.dto.TaskResponseDto;
 import br.com.campos.ricardo.awsjavarestapi.service.TaskService;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,12 +19,12 @@ public class TaskController {
   @Autowired private TaskService taskService;
 
   @GetMapping(path = "/get-list", produces = MediaType.APPLICATION_JSON_VALUE)
-  public List<Task> getTasksList() {
+  public List<TaskDto> getTasksList() {
     return taskService.getTaskList();
   }
 
   @PostMapping(path = "/handle-task/{taskName}", produces = MediaType.APPLICATION_JSON_VALUE)
-  public TaskResponse doTask(@PathVariable String taskName) {
+  public TaskResponseDto doTask(@PathVariable String taskName) {
     return taskService.handleTask(taskName);
   }
 }

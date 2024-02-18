@@ -1,6 +1,6 @@
 package br.com.campos.ricardo.awsjavarestapi.aws;
 
-import br.com.campos.ricardo.awsjavarestapi.dto.Task;
+import br.com.campos.ricardo.awsjavarestapi.dto.TaskDto;
 import br.com.campos.ricardo.awsjavarestapi.enums.TaskEnum;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,7 +24,7 @@ public class AwsS3Service {
 
   @Autowired private AwsConfig awsConfig;
 
-  public Task getSingleTaskFile(TaskEnum task) {
+  public TaskDto getSingleTaskFile(TaskEnum task) {
     S3Client s3Client = buildS3Client();
 
     List<String> taskStrings = getS3Objects(s3Client, List.of(task.getCode()));
@@ -34,7 +34,7 @@ public class AwsS3Service {
     return parseTasks(taskStrings).get(0);
   }
 
-  public List<Task> getAllTaskFiles() {
+  public List<TaskDto> getAllTaskFiles() {
     S3Client s3Client = buildS3Client();
 
     List<String> taskFileNames = new ArrayList<>();
@@ -95,18 +95,18 @@ public class AwsS3Service {
   }
 
   /**
-   * Parse a task from JSON format to a {@link Task}.
+   * Parse a task from JSON format to a {@link TaskDto}.
    *
    * @param taskStrings List of Tasks in JSON format to be parsed.
-   * @return List of {@link Task} or empty list.
+   * @return List of {@link TaskDto} or empty list.
    */
-  private List<Task> parseTasks(List<String> taskStrings) {
-    List<Task> tasks = new ArrayList<>();
+  private List<TaskDto> parseTasks(List<String> taskStrings) {
+    List<TaskDto> tasks = new ArrayList<>();
     ObjectMapper mapper = new ObjectMapper();
 
     for (String fileJsonContent : taskStrings) {
       try {
-        Task taskFromJson = mapper.readValue(fileJsonContent, Task.class);
+        TaskDto taskFromJson = mapper.readValue(fileJsonContent, TaskDto.class);
 
         log.info(
             "Parsed from json content - name {} and description {}",

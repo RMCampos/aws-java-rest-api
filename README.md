@@ -6,6 +6,7 @@ Tasks:
 - Receive a task name through POST HTTP request to be processed: http://localhost:8080/tasks/handle-task/CODE_REVIEW
   - Get task description from AWS S3 given the task name
   - Send to SQS to be sent through email as finished
+- List all messages in Queue: http://localhost:8080/messages
 
 ### Packaging
 
