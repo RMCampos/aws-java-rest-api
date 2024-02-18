@@ -16,7 +16,7 @@ public class TaskController {
   @Autowired private TaskService taskService;
 
   @GetMapping(path = "/get-list", produces = MediaType.APPLICATION_JSON_VALUE)
-  public List<String> getTasksList() {
+  public List<Task> getTasksList() {
     return taskService.getTaskList();
   }
 

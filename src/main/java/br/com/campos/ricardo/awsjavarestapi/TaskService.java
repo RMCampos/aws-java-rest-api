@@ -1,9 +1,8 @@
 package br.com.campos.ricardo.awsjavarestapi;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -12,13 +11,10 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class TaskService {
 
-  public List<String> getTaskList() {
-    List<String> tasks = new ArrayList<>();
-    Arrays.asList(TaskEnum.values())
-        .forEach(
-            task -> {
-              tasks.add(task.toString());
-            });
+  @Autowired private AwsS3Service awsS3Service;
+
+  public List<Task> getTaskList() {
+    List<Task> tasks = awsS3Service.getAllTaskFiles();
     return tasks;
   }
 
@@ -31,13 +27,9 @@ public class TaskService {
     log.info("Handling task: {}", taskName);
 
     // Get from AWS S3
-    String template = getTemplate(taskEnum);
-    if (template.isBlank()) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No template for this Task!");
-    }
+    Task task = awsS3Service.getSingleTaskFile(taskEnum);
 
     // Send to SQS to be sent through email
-    Task task = new Task(taskEnum.name(), template);
     sendToSqs(task);
 
     TaskResponse response = new TaskResponse();
@@ -45,20 +37,6 @@ public class TaskService {
     response.setMessage("Task processed and sent to the Queue!");
 
     return response;
-  }
-
-  private String getTemplate(TaskEnum task) {
-    log.info("Getting task template from AWS S3");
-
-    if (task.equals(TaskEnum.CODE_REVIEW)) {
-      log.info("Template found for task CODE_REVIEW");
-      return "Here 1";
-    } else if (task.equals(TaskEnum.HELP_COLLEAGUES)) {
-      log.info("Template found for task HELP_COLLEAGUES");
-      return "Here 2";
-    }
-    log.warn("No template found for task :(");
-    return "";
   }
 
   private void sendToSqs(Task task) {

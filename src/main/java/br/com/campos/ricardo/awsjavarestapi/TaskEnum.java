@@ -10,6 +10,10 @@ public enum TaskEnum {
     this.code = code;
   }
 
+  public String getCode() {
+    return code;
+  }
+
   public static TaskEnum getByCode(String code) {
     for (TaskEnum taskEnum : values()) {
       if (taskEnum.code.equals(code)) {
