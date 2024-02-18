@@ -1,4 +1,4 @@
-package br.com.campos.ricardo.awsjavarestapi;
+package br.com.campos.ricardo.awsjavarestapi.enums;
 
 public enum TaskEnum {
   CODE_REVIEW("CODE_REVIEW"),

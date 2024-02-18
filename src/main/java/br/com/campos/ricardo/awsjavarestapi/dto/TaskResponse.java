@@ -1,4 +1,4 @@
-package br.com.campos.ricardo.awsjavarestapi;
+package br.com.campos.ricardo.awsjavarestapi.dto;
 
 import lombok.Getter;
 import lombok.Setter;

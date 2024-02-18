@@ -1,5 +1,7 @@
-package br.com.campos.ricardo.awsjavarestapi;
+package br.com.campos.ricardo.awsjavarestapi.aws;
 
+import br.com.campos.ricardo.awsjavarestapi.dto.Task;
+import br.com.campos.ricardo.awsjavarestapi.enums.TaskEnum;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
@@ -27,6 +29,8 @@ public class AwsS3Service {
 
     List<String> taskStrings = getS3Objects(s3Client, List.of(task.getCode()));
 
+    s3Client.close();
+
     return parseTasks(taskStrings).get(0);
   }
 
@@ -37,6 +41,8 @@ public class AwsS3Service {
     Arrays.asList(TaskEnum.values()).forEach(task -> taskFileNames.add(task.toString()));
 
     List<String> taskStrings = getS3Objects(s3Client, taskFileNames);
+
+    s3Client.close();
 
     return parseTasks(taskStrings);
   }

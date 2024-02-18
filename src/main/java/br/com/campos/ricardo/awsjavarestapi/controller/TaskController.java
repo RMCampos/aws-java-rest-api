@@ -1,5 +1,8 @@
-package br.com.campos.ricardo.awsjavarestapi;
+package br.com.campos.ricardo.awsjavarestapi.controller;
 
+import br.com.campos.ricardo.awsjavarestapi.dto.Task;
+import br.com.campos.ricardo.awsjavarestapi.dto.TaskResponse;
+import br.com.campos.ricardo.awsjavarestapi.service.TaskService;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
