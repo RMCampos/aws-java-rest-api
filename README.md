@@ -14,6 +14,8 @@ Tasks:
 - Amazon S3
 - Amazon SQS
 - Mailtrap.io (free email testing)
+- Cloud Native (with GraalVM)
+- Docker
 
 ### Packaging
 
@@ -38,7 +40,7 @@ Tasks:
 Building:
 
 ```sh
-docker build -t aws-java-rest-api:0.0.1 .
+docker build -t rmcampos/aws-java-rest-api:1.0.0 .
 ```
 
 Running:
@@ -46,7 +48,7 @@ Running:
 ```sh
 docker run -it --rm \
   -p 8080:8080 \
-  --name aws-java-rest-api \
+  --name rmcampos/aws-java-rest-api:1.0.0 \
   aws-java-rest-api
 ```
 
@@ -58,7 +60,7 @@ docker login -u rmcampos
 
 Push image
 ```sh
-docker image push rmcampos/aws-java-rest-api:0.0.1
+docker image push rmcampos/aws-java-rest-api:1.0.0
 ```
 
 ### AWS
@@ -69,5 +71,5 @@ Running:
 docker run -it --rm -d \
   -p 8080:8080 \
   --name aws-java-rest-api \
-  docker.io/rmcampos/aws-java-rest-api:0.0.1
+  docker.io/rmcampos/aws-java-rest-api:1.0.0
 ```

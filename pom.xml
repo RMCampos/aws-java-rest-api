@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>br.com.campos.ricardo</groupId>
 	<artifactId>aws-java-rest-api</artifactId>
-	<version>0.0.1</version>
+	<version>1.0.0</version>
 	<name>aws-java-rest-api</name>
 	<description>Demo project for Spring Boot</description>
 	<properties>
