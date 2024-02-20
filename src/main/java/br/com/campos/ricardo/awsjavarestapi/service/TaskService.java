@@ -23,26 +23,33 @@ public class TaskService {
 
   public List<TaskDto> getTaskList() {
     List<TaskDto> tasks = awsS3Service.getAllTaskFiles();
+    log.info("GetTasksList - {} tasks found", tasks.size());
+    log.info("GetTasksList - Finished!");
     return tasks;
   }
 
+  //
+  // HandleTask methods
+  //
   public TaskResponseDto handleTask(String taskName) {
     TaskEnum taskEnum = TaskEnum.getByCode(taskName);
     if (taskEnum == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Task!");
     }
 
-    log.info("Handling task: {}", taskName);
+    log.info("HandleTask - Handling task: {}", taskName);
 
     // Get from AWS S3
-    TaskDto task = awsS3Service.getSingleTaskFile(taskEnum);
+    TaskDto task = awsS3Service.getSingleTaskFile(taskEnum, "HandleTask");
 
     // Send to SQS to be sent through email
-    sqsService.addMessageToQueue(task.description());
+    sqsService.addMessageToQueue(task.description(), "HandleTask");
 
     TaskResponseDto response = new TaskResponseDto();
     response.setTask(task);
-    response.setMessage("Task processed and sent to the Queue!");
+    response.setMessage("Task processed and added in the Queue to be processed!");
+    log.info("HandleTask - Task processed and added in the Queue to be processed!");
+    log.info("HandleTask - Finished!");
 
     return response;
   }

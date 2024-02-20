@@ -24,7 +24,7 @@ public class TaskController {
   }
 
   @PostMapping(path = "/handle-task/{taskName}", produces = MediaType.APPLICATION_JSON_VALUE)
-  public TaskResponseDto doTask(@PathVariable String taskName) {
+  public TaskResponseDto handleTask(@PathVariable String taskName) {
     return taskService.handleTask(taskName);
   }
 }

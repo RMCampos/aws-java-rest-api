@@ -13,7 +13,8 @@ import org.springframework.web.server.ResponseStatusException;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.CreateQueueRequest;
-import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
+import software.amazon.awssdk.services.sqs.model.DeleteMessageBatchRequest;
+import software.amazon.awssdk.services.sqs.model.DeleteMessageBatchRequestEntry;
 import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
@@ -30,38 +31,88 @@ public class AwsSqsService {
 
   private final EmailService emailService;
 
-  private SqsClient getClient() {
-    log.info("AWS Region: {}", awsConfig.getAwsRegion());
+  //
+  // Commom methods
+  //
+  private SqsClient getSqsClient(String method) {
+    log.info("{} - AWS Region: {}", method, awsConfig.getAwsRegion());
     Region region = Region.of(awsConfig.getAwsRegion());
 
     return SqsClient.builder().region(region).build();
   }
 
-  public void addMessageToQueue(String message) {
-    log.info("Sending task to SQS!");
+  private List<AwsMessageDto> getAllMessagesFromSqsQueue(SqsClient sqsClient, String method) {
+    String queueName = awsConfig.getAwsSqsQueueName();
+    log.info("{} - AWS SQS Queue name: {}", method, queueName);
 
-    SqsClient client = getClient();
+    try {
+      CreateQueueRequest request = CreateQueueRequest.builder().queueName(queueName).build();
 
-    sendMessage(client, message);
+      sqsClient.createQueue(request);
+
+      GetQueueUrlRequest getQueueUrlRequest =
+          GetQueueUrlRequest.builder().queueName(queueName).build();
+
+      String queueUrl = sqsClient.getQueueUrl(getQueueUrlRequest).queueUrl();
+
+      ReceiveMessageRequest receiveMessageRequest =
+          ReceiveMessageRequest.builder().queueUrl(queueUrl).maxNumberOfMessages(10).build();
+
+      ReceiveMessageResponse response = sqsClient.receiveMessage(receiveMessageRequest);
+
+      List<Message> messages = response.messages();
+      log.info("{} - {} message(s) successfully pulled from SQS queue!", method, messages.size());
+      List<AwsMessageDto> messageDtos = new ArrayList<>();
+      messages.forEach(
+          message -> {
+            log.info("{} - Message id {}", method, message.messageId());
+            messageDtos.add(
+                new AwsMessageDto(message.messageId(), message.body(), message.receiptHandle()));
+          });
+
+      return messageDtos;
+    } catch (SqsException se) {
+      log.error("{} - SqsException: {}", method, se.awsErrorDetails().errorMessage());
+      se.printStackTrace();
+    }
+
+    return List.of();
+  }
+
+  //
+  // DoTask methods
+  //
+  public void addMessageToQueue(String message, String method) {
+    log.info("{} - Sending task to SQS!", method);
+
+    SqsClient client = getSqsClient(method);
+
+    sendMessage(client, message, method);
 
     client.close();
   }
 
+  //
+  // GetMessages methods
+  //
   public List<AwsMessageDto> getAllMessagesInQueue() {
-    log.info("Getting all messages in SQS Queue!");
+    log.info("GetMessages - Getting all messages in SQS Queue!");
 
-    SqsClient client = getClient();
+    SqsClient sqsClient = getSqsClient("GetMessages");
 
-    List<AwsMessageDto> list = getAllMessages(client);
+    List<AwsMessageDto> list = getAllMessagesFromSqsQueue(sqsClient, "GetMessages");
+    removeMessageFromQueue(sqsClient, list, "GetMessages");
 
-    client.close();
+    sqsClient.close();
+
+    log.info("GetMessages - Finished!");
 
     return list;
   }
 
-  private void sendMessage(SqsClient sqsClient, String message) {
+  private void sendMessage(SqsClient sqsClient, String message, String method) {
     String queueName = awsConfig.getAwsSqsQueueName();
-    log.info("AWS SQS queue name: {}", queueName);
+    log.info("{} - AWS SQS queue name: {}", method, queueName);
 
     try {
       CreateQueueRequest request = CreateQueueRequest.builder().queueName(queueName).build();
@@ -82,79 +133,51 @@ public class AwsSqsService {
 
       sqsClient.sendMessage(messageRequest);
 
-      log.info("Message successfully added in the queue!");
+      log.info("{} - Message successfully added in the queue!", method);
     } catch (SqsException se) {
-      log.error("SqsException: {}", se.awsErrorDetails().errorMessage());
+      log.error("{} - SqsException: {}", method, se.awsErrorDetails().errorMessage());
       se.printStackTrace();
     }
   }
 
-  private List<AwsMessageDto> getAllMessages(SqsClient sqsClient) {
-    String queueName = awsConfig.getAwsSqsQueueName();
-    log.info("AWS SQS queue name: {}", queueName);
+  //
+  // ProcessFirstMessage methods
+  //
+  public void processFirstMessage() {
+    log.info("ProcessFirstMessage - Getting all messages from SQS Queue to filter from!");
 
-    try {
-      CreateQueueRequest request = CreateQueueRequest.builder().queueName(queueName).build();
+    SqsClient sqsClient = getSqsClient("ProcessFirstMessage");
 
-      sqsClient.createQueue(request);
-
-      GetQueueUrlRequest getQueueUrlRequest =
-          GetQueueUrlRequest.builder().queueName(queueName).build();
-
-      String queueUrl = sqsClient.getQueueUrl(getQueueUrlRequest).queueUrl();
-
-      ReceiveMessageRequest receiveMessageRequest =
-          ReceiveMessageRequest.builder().queueUrl(queueUrl).maxNumberOfMessages(10).build();
-
-      ReceiveMessageResponse response = sqsClient.receiveMessage(receiveMessageRequest);
-
-      List<Message> messages = response.messages();
-      log.info("{} message(s) successfully pulled from the queue!", messages.size());
-      List<AwsMessageDto> messageDtos = new ArrayList<>();
-      messages.forEach(
-          message -> {
-            messageDtos.add(
-                new AwsMessageDto(message.messageId(), message.body(), message.receiptHandle()));
-          });
-
-      return messageDtos;
-    } catch (SqsException se) {
-      log.error("SqsException: {}", se.awsErrorDetails().errorMessage());
-      se.printStackTrace();
-    }
-
-    return List.of();
-  }
-
-  public void processMessage(String messageId) {
-    log.info("Getting all messages in SQS Queue!");
-
-    SqsClient sqsClient = getClient();
-
-    List<AwsMessageDto> list = getAllMessages(sqsClient);
+    List<AwsMessageDto> list = getAllMessagesFromSqsQueue(sqsClient, "ProcessFirstMessage");
+    log.info("ProcessFirstMessage - {} Message(s) found in SQS Queue!", list.size());
 
     Optional<AwsMessageDto> meOptional =
-        list.stream().filter(m -> m.messageId().equals(messageId)).findFirst();
+        list.stream().filter(m -> !m.receiptHandler().isBlank()).findFirst();
 
     if (meOptional.isEmpty()) {
-      log.error("Message not found in Queue! id: {}", messageId);
+      log.error("ProcessFirstMessage - No messages found in Queue!");
       sqsClient.close();
       return;
     }
 
+    removeMessageFromQueue(sqsClient, List.of(meOptional.get()), "ProcessFirstMessage");
+    log.info("ProcessFirstMessage - Message removed from SQS Queue!");
+
+    sqsClient.close();
+
     if (emailService.sendEmail(meOptional.get().messageBody())) {
-      removeMessageFromQueue(sqsClient, meOptional.get().receiptHandler());
-      sqsClient.close();
+      log.info("ProcessFirstMessage - Email sent!");
+      log.info("ProcessFirstMessage - Finished!");
     } else {
-      log.error("Unable to send email! Message kept in the queue!");
-      sqsClient.close();
+      log.error("ProcessFirstMessage - Unable to send email!");
+      log.info("ProcessFirstMessage - Finished!");
       throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error sending email!");
     }
   }
 
-  private void removeMessageFromQueue(SqsClient sqsClient, String receiptHandler) {
+  private void removeMessageFromQueue(SqsClient sqsClient, List<AwsMessageDto> messageDtos, String method) {
     String queueName = awsConfig.getAwsSqsQueueName();
-    log.info("AWS SQS queue name: {}", queueName);
+    log.info("{} - AWS SQS queue name: {}", method, queueName);
 
     try {
       CreateQueueRequest request = CreateQueueRequest.builder().queueName(queueName).build();
@@ -166,14 +189,24 @@ public class AwsSqsService {
 
       String queueUrl = sqsClient.getQueueUrl(getQueueUrlRequest).queueUrl();
 
-      DeleteMessageRequest deleteMessageRequest =
-          DeleteMessageRequest.builder().queueUrl(queueUrl).receiptHandle(receiptHandler).build();
+      List<DeleteMessageBatchRequestEntry> entries = new ArrayList<>();
+      messageDtos.forEach(
+          message -> {
+            entries.add(
+                DeleteMessageBatchRequestEntry.builder()
+                    .id(message.messageId())
+                    .receiptHandle(message.receiptHandler())
+                    .build());
+          });
 
-      sqsClient.deleteMessage(deleteMessageRequest);
-      log.info("Message sucessfully deleted from Queue!");
+      DeleteMessageBatchRequest deleteMessageBatchRequest =
+          DeleteMessageBatchRequest.builder().queueUrl(queueUrl).entries(entries).build();
 
+      sqsClient.deleteMessageBatch(deleteMessageBatchRequest);
+      log.info("{} - {} message(s) sucessfully deleted from Queue!", method, messageDtos.size());
+      log.info("{} - Finished!", method);
     } catch (SqsException se) {
-      log.error("SqsException: {}", se.awsErrorDetails().errorMessage());
+      log.error("{} - SqsException: {}", method, se.awsErrorDetails().errorMessage());
       se.printStackTrace();
     }
   }
